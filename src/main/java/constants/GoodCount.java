@@ -4,7 +4,7 @@ package constants;
  * DB関連の項目値を定義するインターフェース
  * ※インターフェイスに定義した変数は public static final 修飾子がついているとみなされる
  */
-public interface JpaConst {
+public interface GoodCount {
 
     //persistence-unit名
     String PERSISTENCE_UNIT_NAME = "daily_report_system";
@@ -40,30 +40,18 @@ public interface JpaConst {
     String REP_COL_CREATED_AT = "created_at"; //登録日時
     String REP_COL_UPDATED_AT = "updated_at"; //更新日時
 
-//    イイねテーブル
-    String TABLE_FAV="favorites";//いいねテーブル
-    //いいねテーブルカラム
-    String FAV_COL_ID = "id"; //id
-    String FAV_COL_EMP = "employee_id"; //誰が
-    String FAV_COL_REP_DATE = "report_id"; //どの日報
-
-    //実際名
+    //Entity名
     String ENTITY_EMP = "employee"; //従業員
     String ENTITY_REP = "report"; //日報
-    String ENTITY_FAV = "favorite"; //いいね
 
     //JPQL内パラメータ
     String JPQL_PARM_CODE = "code"; //社員番号
     String JPQL_PARM_PASSWORD = "password"; //パスワード
     String JPQL_PARM_EMPLOYEE = "employee"; //従業員
-    String JPQL_PARM_FAVORITE="favorite";//いいね
-    String JPQL_PARM_REPORT = "report"; //日報
-
-//    テーブル内の詳細
 
     //NamedQueryの nameとquery
     //全ての従業員をidの降順に取得する
-    String Q_EMP_GET_ALL = ENTITY_EMP + ".getAll"; //name 全て
+    String Q_EMP_GET_ALL = ENTITY_EMP + ".getAll"; //name
     String Q_EMP_GET_ALL_DEF = "SELECT e FROM Employee AS e ORDER BY e.id DESC"; //query
     //全ての従業員の件数を取得する
     String Q_EMP_COUNT = ENTITY_EMP + ".count";
@@ -74,7 +62,6 @@ public interface JpaConst {
     //指定した社員番号を保持する従業員の件数を取得する
     String Q_EMP_COUNT_REGISTERED_BY_CODE = ENTITY_EMP + ".countRegisteredByCode";
     String Q_EMP_COUNT_REGISTERED_BY_CODE_DEF = "SELECT COUNT(e) FROM Employee AS e WHERE e.code = :" + JPQL_PARM_CODE;
-
     //全ての日報をidの降順に取得する
     String Q_REP_GET_ALL = ENTITY_REP + ".getAll";
     String Q_REP_GET_ALL_DEF = "SELECT r FROM Report AS r ORDER BY r.id DESC";
@@ -88,22 +75,4 @@ public interface JpaConst {
     String Q_REP_COUNT_ALL_MINE = ENTITY_REP + ".countAllMine";
     String Q_REP_COUNT_ALL_MINE_DEF = "SELECT COUNT(r) FROM Report AS r WHERE r.employee = :" + JPQL_PARM_EMPLOYEE;
 
-
-//    いいね追記
-    //全てのいいねの件数を取得する
-    String Q_FAV_COUNT = ENTITY_FAV + ".count";
-    String Q_FAV_COUNT_DEF = "SELECT COUNT(f) FROM favorite AS f";
-
-//    いいねをテーブルに追加
-    String Q_FAVORITE_ADD=".favoriteAdd";
-    String Q_FAVORITE_ADD_DEF="INSERT INTO favorites(FAV_COL_ID,FAV_COL_REP_DATE,REP_COL_CREATED_AT,REP_COL_UPDATED_AT)"+JPQL_PARM_REPORT;
-
-   //show.jspに入る前にチェックする
-  //showのフォームで表示させるために「いいね」の数をあらかじめ取得するクエリ
-    String Q_FAV_COUNT_REGISTERED_FOR_EACH_REPORT = ENTITY_FAV + ".countRegisteredForEachReport";
-    String Q_FAV_COUNT_REGISTERED_FOR_EACH_REPORT_DEF = "SELECT COUNT(f) FROM Favorite AS f WHERE f.report = :" + JPQL_PARM_REPORT;
-
-    //count_check_favorite
-    String Q_FAV_COUNT_CHECK_FAVORITE = ENTITY_FAV + ".countRegisteredForEachReport";
-    String Q_FAV_COUNT_CHECK_FAVORITE_DEF = "SELECT COUNT(f) FROM Favorite AS f WHERE f.report AND f.employee = :" + JPQL_PARM_REPORT;
-    }
+}

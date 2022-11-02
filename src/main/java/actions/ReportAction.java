@@ -7,11 +7,13 @@ import java.util.List;
 import javax.servlet.ServletException;
 
 import actions.views.EmployeeView;
+import actions.views.FavoritesView;
 import actions.views.ReportView;
 import constants.AttributeConst;
 import constants.ForwardConst;
 import constants.JpaConst;
 import constants.MessageConst;
+import services.FavoriteService;
 import services.ReportService;
 /**
  * 日報に関する処理を行うActionクラス
@@ -20,13 +22,15 @@ import services.ReportService;
 public class ReportAction extends ActionBase {
 
     private ReportService service;
+    private FavoriteService favservice;
+
 
     /**
      * メソッドを実行する
      */
     @Override
     public void process() throws ServletException, IOException {
-
+        System.out.println("process");
         service = new ReportService();
 
         //メソッドを実行
@@ -40,7 +44,7 @@ public class ReportAction extends ActionBase {
      * @throws IOException
      */
     public void index() throws ServletException, IOException {
-
+        System.out.println("表示index");
         //指定されたページ数の一覧画面に表示する日報データを取得
         int page = getPage();
         List<ReportView> reports = service.getAllPerPage(page);
@@ -63,8 +67,11 @@ public class ReportAction extends ActionBase {
         //一覧画面を表示
         forward(ForwardConst.FW_REP_INDEX);
     }
-    public void entryNew() throws ServletException, IOException {
 
+
+//     ＊新規登録ページ
+    public void entryNew() throws ServletException, IOException {
+        System.out.println("表示entryNew");
         putRequestScope(AttributeConst.TOKEN, getTokenId()); //CSRF対策用トークン
 
         //日報情報の空インスタンスに、日報の日付＝今日の日付を設定する
@@ -76,7 +83,7 @@ public class ReportAction extends ActionBase {
         forward(ForwardConst.FW_REP_NEW);
     }
     public void create() throws ServletException, IOException {
-
+        System.out.println("表示create");
         //CSRF対策 tokenのチェック
         if (checkToken()) {
 
@@ -133,17 +140,25 @@ public class ReportAction extends ActionBase {
      * @throws IOException
      */
     public void show() throws ServletException, IOException {
-
+        System.out.println("表示show");
         //idを条件に日報データを取得する
         ReportView rv = service.findOne(toNumber(getRequestParam(AttributeConst.REP_ID)));
+
+        // FavoriteServiceクラスのインスタンス生成
+        FavoriteService fs = new FavoriteService();
+        // FavoriteServiceクラスに定義した getFavCountメソッドを使って、今注目している日報にいいねされた数を求める
+        long fav_count = fs.getFavCount(rv);
+
+
 
         if (rv == null) {
             //該当の日報データが存在しない場合はエラー画面を表示
             forward(ForwardConst.FW_ERR_UNKNOWN);
 
         } else {
-
+            putRequestScope(AttributeConst.TOKEN, getTokenId());
             putRequestScope(AttributeConst.REPORT, rv); //取得した日報データ
+            putRequestScope(AttributeConst.FAV_COUNT, fav_count); //取得したいいね数データ
 
             //詳細画面を表示
             forward(ForwardConst.FW_REP_SHOW);
@@ -155,7 +170,7 @@ public class ReportAction extends ActionBase {
      * @throws IOException
      */
     public void edit() throws ServletException, IOException {
-
+        System.out.println("表示edit");
         //idを条件に日報データを取得する
         ReportView rv = service.findOne(toNumber(getRequestParam(AttributeConst.REP_ID)));
 
@@ -186,7 +201,7 @@ public class ReportAction extends ActionBase {
 
         //CSRF対策 tokenのチェック
         if (checkToken()) {
-
+            System.out.println("表示update");
             //idを条件に日報データを取得する
             ReportView rv = service.findOne(toNumber(getRequestParam(AttributeConst.REP_ID)));
 
@@ -215,8 +230,58 @@ public class ReportAction extends ActionBase {
 
                 //一覧画面にリダイレクト
                 redirect(ForwardConst.ACT_REP, ForwardConst.CMD_INDEX);
-
             }
         }
-    }
+     }
+//            いいね機能追加
+            public void favorite() throws ServletException, IOException{
+
+                //CSRF対策 tokenのチェック
+                if (checkToken()) {
+//                    Integer id=getSessionScope(AttributeConst.FAV_ID);
+                    EmployeeView ev = (EmployeeView) getSessionScope(AttributeConst.LOGIN_EMP);
+
+//                    System.out.println("id="+id);
+//                  //セッションからログイン中の従業員情報を取得
+//                  EmployeeView employee_id =  getSessionScope(AttributeConst.LOGIN_EMP);
+//                  System.out.println("employee_id="+employee_id);
+//                  日報ID取得
+//                  Report report_id= getSessionScope(AttributeConst.REPORT);
+//                  System.out.println("レポートid="+report_id);
+
+                  //パラメータの値をもとに日報情報のインスタンスを作成する
+                  FavoritesView fa= new FavoritesView(
+                          null,
+                          ev, //ログインしている従業員を、いいね作成者として登録する
+                          getSessionScope(AttributeConst.REP_DATE)
+                          );
+                  System.out.println("favoriteメソッド起動");
+                    //いいねデータを更新する
+
+                    //日報情報登録
+                    List<String> errors = favservice.Favoritecreate(fa);
+
+                    if (errors.size() > 0) {
+                        //登録中にエラーがあった場合
+
+                        putRequestScope(AttributeConst.TOKEN, getTokenId()); //CSRF対策用トークン
+                        putRequestScope(AttributeConst.FAVORT, fa);//入力されたいいね情報
+                        putRequestScope(AttributeConst.ERR, errors);//エラーのリスト
+
+                        //新規登録画面を再表示
+                        forward(ForwardConst.FW_REP_SHOW);
+
+                    } else {
+                        //登録中にエラーがなかった場合
+
+                        //セッションに登録完了のフラッシュメッセージを設定(いいね押しました)
+                        putSessionScope(AttributeConst.FLUSH, MessageConst.F_FAVORITE.getMessage());
+
+                        //一覧画面にリダイレクト
+                        redirect(ForwardConst.ACT_REP, ForwardConst.CMD_FAVORITE);
+                    }
+
+                }
+        }
+
 }

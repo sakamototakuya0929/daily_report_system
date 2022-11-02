@@ -2,10 +2,13 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt"%>
 <%@ page import="constants.ForwardConst" %>
+<%@ page import="constants.AttributeConst" %>
 
 <c:set var="actRep" value="${ForwardConst.ACT_REP.getValue()}" />
 <c:set var="commIdx" value="${ForwardConst.CMD_INDEX.getValue()}" />
 <c:set var="commEdt" value="${ForwardConst.CMD_EDIT.getValue()}" />
+<c:set var="commShow" value="${ForwardConst.CMD_SHOW.getValue()}" />
+<c:set var="commFav" value="${ForwardConst.CMD_FAVORITE.getValue()}" />
 
 <c:import url="/WEB-INF/views/layout/app.jsp">
     <c:param name="content">
@@ -39,15 +42,23 @@
                 </tr>
             </tbody>
         </table>
-
+               <p>いいね数: <c:out value="${favorite_count}"/></p>
         <c:if test="${sessionScope.login_employee.id == report.employee.id}">
             <p>
                 <a href="<c:url value='?action=${actRep}&command=${commEdt}&id=${report.id}' />">この日報を編集する</a>
             </p>
-        </c:if>
 
+           <form method="POST" action="<c:url value='?action=${actRep}&command=${commFav}' />">
+           <input type="hidden" name="${AttributeConst.REP_ID.getValue()}" value="${report.id}" />
+            <input type="hidden" name="${AttributeConst.TOKEN.getValue()}" value="${_token}" />
+            <button type="submit">いいね</button>
+
+        </form>
+
+        </c:if>
         <p>
             <a href="<c:url value='?action=${actRep}&command=${commIdx}' />">一覧に戻る</a>
         </p>
+
     </c:param>
 </c:import>
