@@ -28,6 +28,7 @@ public enum ForwardConst {
     CMD_DESTROY("destroy"),
 //    いいねcommand
     CMD_FAVORITE("favorite"),
+    CMD_DESTROY_FAVORITE("destroyFavorite"),
 
     //jsp
     FW_ERR_UNKNOWN("error/unknown"),

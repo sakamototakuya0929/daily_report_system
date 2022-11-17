@@ -6,13 +6,17 @@ import java.util.List;
 
 import javax.servlet.ServletException;
 
+import actions.views.EmployeeConverter;
 import actions.views.EmployeeView;
 import actions.views.FavoritesView;
+import actions.views.ReportConverter;
 import actions.views.ReportView;
 import constants.AttributeConst;
 import constants.ForwardConst;
 import constants.JpaConst;
 import constants.MessageConst;
+import models.Employee;
+import models.Report;
 import services.FavoriteService;
 import services.ReportService;
 /**
@@ -32,9 +36,12 @@ public class ReportAction extends ActionBase {
     public void process() throws ServletException, IOException {
         System.out.println("process");
         service = new ReportService();
+        favservice = new FavoriteService();
 
         //メソッドを実行
         invoke();
+
+        favservice.close();
         service.close();
     }
 
@@ -141,15 +148,27 @@ public class ReportAction extends ActionBase {
      */
     public void show() throws ServletException, IOException {
         System.out.println("表示show");
+
         //idを条件に日報データを取得する
         ReportView rv = service.findOne(toNumber(getRequestParam(AttributeConst.REP_ID)));
+        //セッションからログイン中の従業員情報を取得
+        EmployeeView loginEmployee = (EmployeeView) getSessionScope(AttributeConst.LOGIN_EMP);
+
 
         // FavoriteServiceクラスのインスタンス生成
         FavoriteService fs = new FavoriteService();
         // FavoriteServiceクラスに定義した getFavCountメソッドを使って、今注目している日報にいいねされた数を求める
         long fav_count = fs.getFavCount(rv);
 
+ // ev, rvをモデルクラスに変換
+        Employee e = EmployeeConverter.toModel(loginEmployee);
+        Report r = ReportConverter.toModel(rv);
 
+        // FavoriteServiceクラスの checkFavoriteメソッドにe, r を渡して、今ログインしている従業員が、詳細表示をしようとしている日報にすでにいいねしているかどうかを true/falseで返すメソッドを実行
+        Boolean isFavorite = fs.checkFavorite(e, r);
+        System.out.println("e:"+ e.getId());
+        System.out.println("r:"+ r.getId());
+        System.out.println("isFavorite :"+ isFavorite );
 
         if (rv == null) {
             //該当の日報データが存在しない場合はエラー画面を表示
@@ -159,38 +178,11 @@ public class ReportAction extends ActionBase {
             putRequestScope(AttributeConst.TOKEN, getTokenId());
             putRequestScope(AttributeConst.REPORT, rv); //取得した日報データ
             putRequestScope(AttributeConst.FAV_COUNT, fav_count); //取得したいいね数データ
+            putRequestScope(AttributeConst.ISFAVORITE, isFavorite); //ログインしていている従業員が詳細表示しようとしている日報にすでにいいねしているかどうか
 
             //詳細画面を表示
             forward(ForwardConst.FW_REP_SHOW);
         }
-    }
-    /**
-     * 編集画面を表示する
-     * @throws ServletException
-     * @throws IOException
-     */
-    public void edit() throws ServletException, IOException {
-        System.out.println("表示edit");
-        //idを条件に日報データを取得する
-        ReportView rv = service.findOne(toNumber(getRequestParam(AttributeConst.REP_ID)));
-
-        //セッションからログイン中の従業員情報を取得
-        EmployeeView ev = (EmployeeView) getSessionScope(AttributeConst.LOGIN_EMP);
-
-        if (rv == null || ev.getId() != rv.getEmployee().getId()) {
-            //該当の日報データが存在しない、または
-            //ログインしている従業員が日報の作成者でない場合はエラー画面を表示
-            forward(ForwardConst.FW_ERR_UNKNOWN);
-
-        } else {
-
-            putRequestScope(AttributeConst.TOKEN, getTokenId()); //CSRF対策用トークン
-            putRequestScope(AttributeConst.REPORT, rv); //取得した日報データ
-
-            //編集画面を表示
-            forward(ForwardConst.FW_REP_EDIT);
-        }
-
     }
     /**
      * 更新を行う
@@ -238,27 +230,22 @@ public class ReportAction extends ActionBase {
 
                 //CSRF対策 tokenのチェック
                 if (checkToken()) {
-//                    Integer id=getSessionScope(AttributeConst.FAV_ID);
+                    //セッションからログイン中の従業員情報を取得
                     EmployeeView ev = (EmployeeView) getSessionScope(AttributeConst.LOGIN_EMP);
+                  //idを条件に日報データを取得する
+                    ReportView rv = service.findOne(toNumber(getRequestParam(AttributeConst.REP_ID)));
 
-//                    System.out.println("id="+id);
-//                  //セッションからログイン中の従業員情報を取得
-//                  EmployeeView employee_id =  getSessionScope(AttributeConst.LOGIN_EMP);
-//                  System.out.println("employee_id="+employee_id);
-//                  日報ID取得
-//                  Report report_id= getSessionScope(AttributeConst.REPORT);
-//                  System.out.println("レポートid="+report_id);
 
                   //パラメータの値をもとに日報情報のインスタンスを作成する
                   FavoritesView fa= new FavoritesView(
                           null,
                           ev, //ログインしている従業員を、いいね作成者として登録する
-                          getSessionScope(AttributeConst.REP_DATE)
+                          rv  //いいねしたレポート
                           );
                   System.out.println("favoriteメソッド起動");
                     //いいねデータを更新する
 
-                    //日報情報登録
+                    //いいね情報登録
                     List<String> errors = favservice.Favoritecreate(fa);
 
                     if (errors.size() > 0) {
@@ -278,10 +265,53 @@ public class ReportAction extends ActionBase {
                         putSessionScope(AttributeConst.FLUSH, MessageConst.F_FAVORITE.getMessage());
 
                         //一覧画面にリダイレクト
-                        redirect(ForwardConst.ACT_REP, ForwardConst.CMD_FAVORITE);
+                        redirect(ForwardConst.ACT_REP, ForwardConst.CMD_INDEX);
                     }
-
                 }
         }
+            //いいね削除ボタン
+            public void destroyFavorite() throws ServletException,IOException{
 
+                //CSRF対策 tokenのチェック
+                if (checkToken()) {
+                    //セッションからログイン中の従業員情報を取得
+                    EmployeeView ev = (EmployeeView) getSessionScope(AttributeConst.LOGIN_EMP);
+                  //idを条件に日報データを取得する
+                    ReportView rv = service.findOne(toNumber(getRequestParam(AttributeConst.REP_ID)));
+
+                    // コンバータでモデルに変換
+                    Employee e = EmployeeConverter.toModel(ev);
+                    Report r = ReportConverter.toModel(rv);
+
+                    // FavoriteServiceインスタンスを生成　
+
+                    // FavoriteServiceクラスのdestroyメソッドに　従業員インスタンス、日報インスタンスを引数を渡してテーブルからデータを削除
+
+
+                  System.out.println("destroyFavoriteメソッド起動");
+
+                    //いいね情報削除
+                    List<String> errors = favservice.Favoritedestroy(e, r);
+
+                    if (errors.size() > 0) {
+                        //登録中にエラーがあった場合
+
+                        putRequestScope(AttributeConst.TOKEN, getTokenId()); //CSRF対策用トークン
+                        putRequestScope(AttributeConst.ERR, errors);//エラーのリスト
+
+                        //新規登録画面を再表示
+                        forward(ForwardConst.FW_REP_SHOW);
+
+                    } else {
+                        //登録中にエラーがなかった場合
+
+                        //セッションに登録完了のフラッシュメッセージを設定(いいねを取り消しました)
+                        putSessionScope(AttributeConst.FLUSH, MessageConst.F_FAVORITE_DEL.getMessage());
+
+                        //一覧画面にリダイレクト
+                        redirect(ForwardConst.ACT_REP, ForwardConst.CMD_INDEX);
+                    }
+            }
+
+        }
 }

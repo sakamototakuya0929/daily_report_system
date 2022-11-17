@@ -45,7 +45,7 @@ public interface JpaConst {
     //いいねテーブルカラム
     String FAV_COL_ID = "id"; //id
     String FAV_COL_EMP = "employee_id"; //誰が
-    String FAV_COL_REP_DATE = "report_id"; //どの日報
+    String FAV_COL_REP = "report_id"; //どの日報
 
     //実際名
     String ENTITY_EMP = "employee"; //従業員
@@ -88,22 +88,19 @@ public interface JpaConst {
     String Q_REP_COUNT_ALL_MINE = ENTITY_REP + ".countAllMine";
     String Q_REP_COUNT_ALL_MINE_DEF = "SELECT COUNT(r) FROM Report AS r WHERE r.employee = :" + JPQL_PARM_EMPLOYEE;
 
-
-//    いいね追記
-    //全てのいいねの件数を取得する
-    String Q_FAV_COUNT = ENTITY_FAV + ".count";
-    String Q_FAV_COUNT_DEF = "SELECT COUNT(f) FROM favorite AS f";
-
-//    いいねをテーブルに追加
-    String Q_FAVORITE_ADD=".favoriteAdd";
-    String Q_FAVORITE_ADD_DEF="INSERT INTO favorites(FAV_COL_ID,FAV_COL_REP_DATE,REP_COL_CREATED_AT,REP_COL_UPDATED_AT)"+JPQL_PARM_REPORT;
+//いいね追記
 
    //show.jspに入る前にチェックする
   //showのフォームで表示させるために「いいね」の数をあらかじめ取得するクエリ
     String Q_FAV_COUNT_REGISTERED_FOR_EACH_REPORT = ENTITY_FAV + ".countRegisteredForEachReport";
-    String Q_FAV_COUNT_REGISTERED_FOR_EACH_REPORT_DEF = "SELECT COUNT(f) FROM Favorite AS f WHERE f.report = :" + JPQL_PARM_REPORT;
+    String Q_FAV_COUNT_REGISTERED_FOR_EACH_REPORT_DEF = "SELECT COUNT(f) FROM Favorite AS f WHERE f.report_id = :" + JPQL_PARM_REPORT;
 
-    //count_check_favorite
-    String Q_FAV_COUNT_CHECK_FAVORITE = ENTITY_FAV + ".countRegisteredForEachReport";
-    String Q_FAV_COUNT_CHECK_FAVORITE_DEF = "SELECT COUNT(f) FROM Favorite AS f WHERE f.report AND f.employee = :" + JPQL_PARM_REPORT;
-    }
+    //count_check_favorite いいねを行ったか確認
+    String Q_FAV_COUNT_CHECK_FAVORITE = ENTITY_FAV + ".countCheckFavorite";
+    String Q_FAV_COUNT_CHECK_FAVORITE_DEF = "SELECT COUNT(f) FROM Favorite AS f WHERE f.report_id=:" + JPQL_PARM_REPORT + " AND f.employee_id=:" + JPQL_PARM_EMPLOYEE;
+
+    // いいねを行った従業員、日報確認
+    String Q_FAV_CHECK_FAVORITE = ENTITY_FAV + ".confirmationEmpRep";
+    String Q_FAV_CHECK_FAVORITE_DEF = "SELECT f FROM Favorite AS f WHERE f.employee_id=:" + JPQL_PARM_EMPLOYEE + " AND f.report_id = :" + JPQL_PARM_REPORT;
+
+}

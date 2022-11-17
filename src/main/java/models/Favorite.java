@@ -21,11 +21,19 @@ import lombok.Setter;
  * いいねデータのDTOモデル
  *
  */
+//実際使うNameQuery
 @Table(name = JpaConst.TABLE_FAV)
 @NamedQueries({
     @NamedQuery(
+            //  //showのフォームで表示させるために「いいね」の数をあらかじめ取得するクエリ
             name = JpaConst.Q_FAV_COUNT_REGISTERED_FOR_EACH_REPORT,
-            query = JpaConst.Q_FAV_COUNT_REGISTERED_FOR_EACH_REPORT_DEF)
+            query = JpaConst.Q_FAV_COUNT_REGISTERED_FOR_EACH_REPORT_DEF),
+    @NamedQuery(
+            name = JpaConst.Q_FAV_CHECK_FAVORITE,
+            query = JpaConst.Q_FAV_CHECK_FAVORITE_DEF),
+    @NamedQuery(
+            name = JpaConst.Q_FAV_COUNT_CHECK_FAVORITE,
+            query = JpaConst.Q_FAV_COUNT_CHECK_FAVORITE_DEF)
 })
 @Getter //全てのクラスフィールドについてgetterを自動生成する(Lombok)
 @Setter //全てのクラスフィールドについてsetterを自動生成する(Lombok)
@@ -53,7 +61,7 @@ public class Favorite {
      * いいねされた日報
      */
     @ManyToOne
-    @JoinColumn(name=JpaConst.FAV_COL_REP_DATE, nullable = false)
-    private Report report;
+    @JoinColumn(name=JpaConst.FAV_COL_REP, nullable = false)
+    private Report report_id;
 
 }

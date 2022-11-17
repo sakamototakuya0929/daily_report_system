@@ -22,7 +22,7 @@ public class FavoriteConverter {
         return new Favorite(
                 fa.getId(),
                 EmployeeConverter.toModel(fa.getEmployee_id()),
-                fa.getReport_id());
+                ReportConverter.toModel(fa.getReport()));
     }
     /**
      * DTOモデルのインスタンスからViewモデルのインスタンスを作成する
@@ -38,7 +38,7 @@ public class FavoriteConverter {
         return new FavoritesView(
                 f.getId(),
                 EmployeeConverter.toView(f.getEmployee_id()),
-                f.getReport());
+                ReportConverter.toView(f.getReport_id()));
     }
 
     /**
@@ -64,7 +64,7 @@ public class FavoriteConverter {
     public static void copyViewToModel(Favorite f, FavoritesView fa) {
         f.setId(fa.getId());
         f.setEmployee_id(EmployeeConverter.toModel(fa.getEmployee_id()));
-        f.setReport(fa.getReport_id());
+        f.setReport_id(ReportConverter.toModel(fa.getReport()));
 
 
     }

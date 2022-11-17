@@ -4,7 +4,6 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import models.Report;
 
 /**
  * いいね情報について画面の入力値・出力値を扱うViewモデル
@@ -29,6 +28,6 @@ public class FavoritesView {
     /**
      * いいねした日報
      */
-    private Report report_id;
+    private ReportView report;
 
 }

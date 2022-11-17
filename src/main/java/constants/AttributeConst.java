@@ -52,6 +52,7 @@ public enum AttributeConst {
 
 //    いいね
     FAVORT("favorite"),
+    ISFAVORITE("isFavorite"),
     FAVORTS("favorites"),
     FAV_COUNT("favorite_count"),
     FAV_ID("id"),

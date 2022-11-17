@@ -7,7 +7,10 @@ import actions.views.FavoritesView;
 import actions.views.ReportConverter;
 import actions.views.ReportView;
 import constants.JpaConst;
+import models.Employee;
 import models.Favorite;
+import models.Report;
+import models.validators.FavoriteValidator;
 
 /**
  * いいねテーブルの操作に関わる処理を行うクラス
@@ -56,15 +59,6 @@ public class FavoriteService extends ServiceBase {
                 .getResultList();
         return FavoriteConverter.toViewList(favorites);
     }
-    /**
-     * いいねテーブルのデータの件数を取得し、返却する
-     * @return データの件数
-     */
-    public long countAll() {
-        long favorites_count = (long) em.createNamedQuery(JpaConst.Q_FAV_COUNT, Long.class)
-                .getSingleResult();
-        return favorites_count;
-    }
 
     /**
      * idを条件に取得したデータをFavoritestViewのインスタンスで返却する
@@ -92,8 +86,11 @@ public class FavoriteService extends ServiceBase {
      * @param fa いいねの登録
      */
     public List<String> Favoritecreate(FavoritesView fa) {
+        List<String> errors = FavoriteValidator.validate(fa);
+        if (errors.size() == 0) {
             createFavorite(fa);
-            return Favoritecreate(fa);
+        }
+        return errors;
 }
     /**
      * いいねデータを1件登録する
@@ -130,18 +127,7 @@ public class FavoriteService extends ServiceBase {
         em.getTransaction().commit();
 
     }
-
-//
-////いいねテーブルに追加するQuery
-//    public long addFavorite(FavoritesView fa){
-//        long count = (long) em.createNamedQuery(JpaConst.Q_FAVORITE_ADD_DEF, Long.class)
-//                .setParameter(JpaConst.JPQL_PARM_FAVORITE, FavoriteConverter.toModel(fa))
-//                .getSingleResult();
-//
-//        return count;
-//    }
-
-//    どの日報かという情報を与えないと いいね数なんかも求めることはできないので、引数にReportViewインスタンスを渡す
+//いいねの表示するのにcountするメソッド
     public long getFavCount(ReportView rv){
         long count = (long) em.createNamedQuery(JpaConst.Q_FAV_COUNT_REGISTERED_FOR_EACH_REPORT, Long.class)
                 .setParameter(JpaConst.JPQL_PARM_REPORT, ReportConverter.toModel(rv))
@@ -149,4 +135,48 @@ public class FavoriteService extends ServiceBase {
 
         return count;
     }
+    /**
+     * 画面から入力されたいいね元にデータを1件のいいねを削除する
+     * @param fa いいねの削除
+     */
+    //いいね削除
+    public List<String> Favoritedestroy(Employee e, Report r) {
+        List<String> errors = FavoriteValidator.validate(e,r);
+        if (errors.size() == 0) {
+            destroy(e,r);
+        }
+        return errors;
 }
+
+    //いいね削除
+    public void destroy(Employee e, Report r ){
+
+        Favorite f = (Favorite)em.createNamedQuery(JpaConst.Q_FAV_CHECK_FAVORITE, Favorite.class)
+                .setParameter(JpaConst.JPQL_PARM_EMPLOYEE, e)
+                .setParameter(JpaConst.JPQL_PARM_REPORT, r)
+                .getSingleResult();
+
+        em.getTransaction().begin();
+        em.remove(f);       // データ削除
+        em.getTransaction().commit();
+        em.close();
+    }
+
+//いいね有無判断メソッド
+
+public Boolean checkFavorite(Employee e, Report r){
+    Long count = em.createNamedQuery(JpaConst.Q_FAV_COUNT_CHECK_FAVORITE, Long.class)
+
+            .setParameter(JpaConst.JPQL_PARM_EMPLOYEE, e)
+            .setParameter(JpaConst.JPQL_PARM_REPORT, r)
+            .getSingleResult();
+
+        // そんな情報がデータベースに存在しなければ
+        if (count == 0) {
+            return false ;
+        } else {
+            return true ;
+        }
+    }
+}
+
